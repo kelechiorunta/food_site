@@ -1,0 +1,71 @@
+.bestsellers-carousel-wrapper {
+  // Target ONLY carousel inside this wrapper
+
+  $grid-breakpoints: (
+    xs: 0,
+    sm: 576px,
+    md: 768px,
+    lg: 992px,
+    xl: 1200px,
+    xxl: 1400px
+  );
+
+  .carousel-control-prev-icon,
+  .carousel-control-next-icon {
+    border-radius: 50%;
+    border: 1px solid black;
+    width: 40px;
+    height: 40px;
+    background-color: black;
+  }
+
+  .carousel-control-prev:hover,
+  .carousel-control-next:hover {
+    opacity: 1;
+  }
+
+  .carousel-control-prev,
+  .carousel-control-next {
+    top: 0;
+    transform: translateY(-50%);
+    opacity: 0.8;
+    color: black;
+    background-color: black;
+    height: fit-content;
+    border-radius: 50%;
+    //   z-index: 50;
+  }
+
+  .carousel-control-prev {
+    top: 0;
+    transform: translate(500%, -50%);
+    // position: relative;
+    // &::before{
+    //     content: '';
+    //     width: 100%;
+    //     position: absolute;
+    //     z-index: 0;
+    //     top: 0;
+    //     left: 0;
+    //     background-color: black;
+    //     height: 40px;
+    // }
+    // transform: translateX(100%);
+  }
+  .carousel-indicators [data-bs-target] {
+    background-color: #333;
+  }
+
+  .carousel-indicators .active {
+    background-color: #000;
+  }
+
+  .sellers_card {
+    // grid-template-columns: repeat(autofill, minmax(auto, 1fr));
+    flex-grow: 1;
+    flex-shrink: 1;
+    flex-basis: auto;
+  }
+}
+
+@import '~bootstrap/scss/bootstrap';

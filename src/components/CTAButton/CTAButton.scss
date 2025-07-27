@@ -1,0 +1,10 @@
+/* make the customizations */
+$theme-colors: (
+  'info': tomato,
+  'danger': teal,
+  'success': green,
+  'primary': rgba(0, 75, 25, 0.2),
+  'secondary': grey
+);
+
+@import '~bootstrap/scss/bootstrap';

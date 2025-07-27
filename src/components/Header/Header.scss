@@ -1,0 +1,29 @@
+/* make the customizations */
+$theme-colors: (
+  'info': tomato,
+  'danger': teal,
+  'success': green,
+  'primary': #fafafa,
+  // rgba(0, 75, 25, 0.2),
+  'secondary': #fafafa,
+  //grey
+  'header': #fafafa
+);
+
+$body-bg: #000;
+$body-dark-color: #000;
+
+$body-light-bg: #fff;
+$body-light-color: #fff;
+
+.dark-body {
+  background-color: $body-bg; // #000
+  color: $body-light-color;
+}
+
+.light-body {
+  background-color: $body-light-bg; // #fff
+  color: $body-dark-color;
+}
+
+@import '~bootstrap/scss/bootstrap';
