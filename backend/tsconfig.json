@@ -4,11 +4,12 @@
     "module": "commonjs",
     "outDir": "./dist",
     "rootDir": "./src",
+    "typeRoots": ["./types", "./node_modules/@types"],
     "strict": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "types/"],
   "exclude": ["node_modules", "dist"]
 }
