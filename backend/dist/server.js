@@ -6,13 +6,16 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const morgan_1 = __importDefault(require("morgan"));
 const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
+const helmet_1 = __importDefault(require("helmet"));
 const express_session_1 = __importDefault(require("express-session"));
 const cors_1 = __importDefault(require("cors"));
 const body_parser_1 = __importDefault(require("body-parser"));
 const compression_1 = __importDefault(require("compression"));
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const connect_mongodb_session_1 = __importDefault(require("connect-mongodb-session"));
-const i18n_express_1 = __importDefault(require("i18n-express"));
+const i18next_1 = __importDefault(require("i18next"));
+const i18next_fs_backend_1 = __importDefault(require("i18next-fs-backend"));
+const i18next_http_middleware_1 = __importDefault(require("i18next-http-middleware"));
 const path_1 = __importDefault(require("path"));
 const authRoutes_1 = __importDefault(require("./routes/authRoutes"));
 const app = (0, express_1.default)();
@@ -58,12 +61,24 @@ const sessionOptions = {
     },
     store: store
 };
+const isDev = process.env.NODE_ENV !== 'production';
 const i18nOptions = {
-    // translationsPath: path.join(process.cwd(), 'backend', 'src', 'i18n'),
-    translationsPath: path_1.default.join(__dirname, 'i18n'), // path.resolve(__dirname, '../src/i18n'),
-    siteLangs: ['en', 'es'],
-    textsVarName: 'translation'
+    backend: {
+        loadPath: isDev
+            ? path_1.default.join(process.cwd(), 'src', 'i18n', '{{lng}}', '{{ns}}.json')
+            : path_1.default.join(__dirname, 'i18n', '{{lng}}', '{{ns}}.json')
+    },
+    detection: {
+        order: ['querystring', 'cookie'],
+        lookupQuerystring: 'lang', // tells detector to use ?lang=
+        caches: ['cookie']
+    },
+    fallbackLng: 'en', // correct spelling
+    preload: ['en', 'es'],
+    ns: ['translation'],
+    defaultNS: 'translation'
 };
+i18next_1.default.use(i18next_fs_backend_1.default).use(i18next_http_middleware_1.default.LanguageDetector).init(i18nOptions);
 // Enable trust proxy/ reverse proxy for secure cookies in session during production
 // through X-Forwarded-Proto header set to true/1
 app.set('trust-proxy', 1);
@@ -75,9 +90,9 @@ app.use(body_parser_1.default.urlencoded(urlType));
 app.use((0, cookie_parser_1.default)());
 app.use((0, morgan_1.default)('dev'));
 app.use(limiter);
-// app.use(helmet());
+app.use((0, helmet_1.default)());
 app.use((0, compression_1.default)());
-app.use((0, i18n_express_1.default)(i18nOptions));
+app.use(i18next_http_middleware_1.default.handle(i18next_1.default));
 app.use('/auth', authRoutes_1.default);
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);

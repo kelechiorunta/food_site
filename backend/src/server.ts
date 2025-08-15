@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import flash from 'connect-flash';
@@ -9,10 +9,13 @@ import bodyParser, { OptionsUrlencoded } from 'body-parser';
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import ConnectMongoDBSession from 'connect-mongodb-session';
-import i18n from 'i18n-express';
+import i18next from 'i18next';
+import Backend from 'i18next-fs-backend';
+import i18nextMiddleware from 'i18next-http-middleware';
 import path from 'path';
 
 import authRouter from './routes/authRoutes';
+import { preload } from 'react-dom';
 
 const app = express();
 const DEV_PORT = 3110;
@@ -63,12 +66,26 @@ const sessionOptions: any = {
   store: store
 };
 
+const isDev = process.env.NODE_ENV !== 'production';
+
 const i18nOptions: any = {
-  // translationsPath: path.join(process.cwd(), 'backend', 'src', 'i18n'),
-  translationsPath: path.join(__dirname, 'i18n'), // path.resolve(__dirname, '../src/i18n'),
-  siteLangs: ['en', 'es'],
-  textsVarName: 'translation'
+  backend: {
+    loadPath: isDev
+      ? path.join(process.cwd(), 'src', 'i18n', '{{lng}}', '{{ns}}.json')
+      : path.join(__dirname, 'i18n', '{{lng}}', '{{ns}}.json')
+  },
+  detection: {
+    order: ['querystring', 'cookie'],
+    lookupQuerystring: 'lang', // tells detector to use ?lang=
+    caches: ['cookie']
+  },
+  fallbackLng: 'en', // correct spelling
+  preload: ['en', 'es'],
+  ns: ['translation'],
+  defaultNS: 'translation'
 };
+
+i18next.use(Backend).use(i18nextMiddleware.LanguageDetector).init(i18nOptions);
 
 // Enable trust proxy/ reverse proxy for secure cookies in session during production
 // through X-Forwarded-Proto header set to true/1
@@ -76,6 +93,7 @@ app.set('trust-proxy', 1);
 
 const urlType: OptionsUrlencoded | any | boolean = false;
 
+// Third-party express middlewares
 app.use(cors(corsOption));
 app.use(session(sessionOptions));
 app.use(bodyParser.json());
@@ -83,10 +101,9 @@ app.use(bodyParser.urlencoded(urlType));
 app.use(cookieParser());
 app.use(morgan('dev'));
 app.use(limiter);
-// app.use(helmet());
+app.use(helmet());
 app.use(compression());
-
-app.use(i18n(i18nOptions));
+app.use(i18nextMiddleware.handle(i18next));
 
 app.use('/auth', authRouter);
 
