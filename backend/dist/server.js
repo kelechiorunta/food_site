@@ -17,7 +17,11 @@ const i18next_1 = __importDefault(require("i18next"));
 const i18next_fs_backend_1 = __importDefault(require("i18next-fs-backend"));
 const i18next_http_middleware_1 = __importDefault(require("i18next-http-middleware"));
 const path_1 = __importDefault(require("path"));
+const passport_1 = __importDefault(require("passport"));
 const authRoutes_1 = __importDefault(require("./routes/authRoutes"));
+const langRoutes_1 = __importDefault(require("./routes/langRoutes"));
+const db_1 = require("./config/db");
+const ratelimitmiddleware_1 = __importDefault(require("./middleware/ratelimitmiddleware"));
 const app = (0, express_1.default)();
 const DEV_PORT = 3110;
 const PORT = process.env.PORT || DEV_PORT;
@@ -79,21 +83,52 @@ const i18nOptions = {
     defaultNS: 'translation'
 };
 i18next_1.default.use(i18next_fs_backend_1.default).use(i18next_http_middleware_1.default.LanguageDetector).init(i18nOptions);
+const authenticatedUser = (req, res, next) => {
+    console.log('User: ', req.user);
+    // res.json({ message: 'Login successful', user: req.user });
+    next();
+};
+const getauthenticatedUser = (req, res, next) => {
+    console.log('User: ', req.user);
+    res.json({ message: 'Login successful', user: req.user });
+    // next();
+};
 // Enable trust proxy/ reverse proxy for secure cookies in session during production
 // through X-Forwarded-Proto header set to true/1
 app.set('trust-proxy', 1);
 const urlType = false;
+// Third-party express middlewares
 app.use((0, cors_1.default)(corsOption));
 app.use((0, express_session_1.default)(sessionOptions));
+app.use(passport_1.default.initialize());
+app.use(passport_1.default.session());
 app.use(body_parser_1.default.json());
 app.use(body_parser_1.default.urlencoded(urlType));
 app.use((0, cookie_parser_1.default)());
 app.use((0, morgan_1.default)('dev'));
-app.use(limiter);
+// app.use(limiter);
 app.use((0, helmet_1.default)());
 app.use((0, compression_1.default)());
 app.use(i18next_http_middleware_1.default.handle(i18next_1.default));
 app.use('/auth', authRoutes_1.default);
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-});
+app.use(authenticatedUser);
+app.use(ratelimitmiddleware_1.default);
+app.use(getauthenticatedUser);
+app.use('/lang', langRoutes_1.default);
+// app.use((err: any, req: Request, res: Response, next: Function) => {
+//   console.error('Something broke', err);
+//   next(err);
+// });
+/**Database connection precedes server/app listening */
+if (process.env.MONGO_URI) {
+    (0, db_1.connectDB)(process.env.MONGO_URI)
+        .then(() => {
+        app.listen(PORT, () => {
+            console.log(`Server is running on port ${PORT}`);
+        });
+    })
+        .catch((err) => {
+        console.error(err);
+        process.exit(1);
+    });
+}
