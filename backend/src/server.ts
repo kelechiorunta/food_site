@@ -1,4 +1,4 @@
-import express, { Request, Response } from 'express';
+import express, { Request, RequestHandler, Response } from 'express';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import flash from 'connect-flash';
@@ -13,11 +13,16 @@ import i18next from 'i18next';
 import Backend from 'i18next-fs-backend';
 import i18nextMiddleware from 'i18next-http-middleware';
 import path from 'path';
+import passport from 'passport';
 
 import authRouter from './routes/authRoutes';
-import { preload } from 'react-dom';
+import langRouter from './routes/langRoutes';
+import { connectDB } from './config/db';
+import ratelimitmiddleware from './middleware/ratelimitmiddleware';
+import isauthenticatedmiddleware from './middleware/isauthenticatedmiddleware';
 
 const app = express();
+
 const DEV_PORT = 3110;
 
 const PORT = process.env.PORT || DEV_PORT;
@@ -87,6 +92,17 @@ const i18nOptions: any = {
 
 i18next.use(Backend).use(i18nextMiddleware.LanguageDetector).init(i18nOptions);
 
+const authenticatedUser: RequestHandler = (req, res, next) => {
+  console.log('User: ', req.user);
+  // res.json({ message: 'Login successful', user: req.user });
+  next();
+};
+
+const getauthenticatedUser: RequestHandler = (req, res, next) => {
+  console.log('User: ', req.user);
+  res.json({ message: 'Login successful', user: req.user });
+  // next();
+};
 // Enable trust proxy/ reverse proxy for secure cookies in session during production
 // through X-Forwarded-Proto header set to true/1
 app.set('trust-proxy', 1);
@@ -96,17 +112,38 @@ const urlType: OptionsUrlencoded | any | boolean = false;
 // Third-party express middlewares
 app.use(cors(corsOption));
 app.use(session(sessionOptions));
+app.use(passport.initialize());
+app.use(passport.session());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded(urlType));
 app.use(cookieParser());
 app.use(morgan('dev'));
-app.use(limiter);
+// app.use(limiter);
 app.use(helmet());
 app.use(compression());
 app.use(i18nextMiddleware.handle(i18next));
 
 app.use('/auth', authRouter);
+app.use(authenticatedUser);
+app.use(ratelimitmiddleware);
+app.use(getauthenticatedUser);
+app.use('/lang', langRouter);
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+// app.use((err: any, req: Request, res: Response, next: Function) => {
+//   console.error('Something broke', err);
+//   next(err);
+// });
+
+/**Database connection precedes server/app listening */
+if (process.env.MONGO_URI) {
+  connectDB(process.env.MONGO_URI)
+    .then(() => {
+      app.listen(PORT, () => {
+        console.log(`Server is running on port ${PORT}`);
+      });
+    })
+    .catch((err) => {
+      console.error(err);
+      process.exit(1);
+    });
+}
