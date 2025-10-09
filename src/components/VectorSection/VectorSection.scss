@@ -1,0 +1,22 @@
+.vector-wrapper {
+  overflow: hidden;
+  width: 100%;
+  background-color: #fafafa;
+  padding: 58px 0;
+}
+
+.vector-slider {
+  display: flex;
+  gap: 100px;
+  animation: slide 20s linear infinite;
+  width: max-content;
+}
+
+@keyframes slide {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-51.75%);
+  }
+}
